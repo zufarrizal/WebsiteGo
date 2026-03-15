@@ -22,21 +22,21 @@
         <div class="topbar">
             <div>
                 <h1>Dashboard</h1>
-                <p>Selamat datang, <strong>{{ .name }}</strong> (Role: <strong>{{ .role }}</strong>)</p>
+                <p>Welcome, <strong>{{ .name }}</strong> (Role: <strong>{{ .role }}</strong>)</p>
             </div>
             <a class="logout" href="/logout">Logout</a>
         </div>
 
         <div class="table-toolbar">
-            <h2>Daftar User</h2>
+            <h2>User List</h2>
             <div class="toolbar-actions">
                 <form method="get" action="/dashboard" class="search-form" id="searchForm">
                     <input type="hidden" name="page" value="1">
                     <input type="hidden" name="per_page" value="{{ .perPage }}">
                     <select id="searchBy" name="search_by" class="search-by">
-                        <option value="all" {{ if eq .searchBy "all" }}selected{{ end }}>Semua</option>
+                        <option value="all" {{ if eq .searchBy "all" }}selected{{ end }}>All</option>
                         <option value="id" {{ if eq .searchBy "id" }}selected{{ end }}>ID</option>
-                        <option value="name" {{ if eq .searchBy "name" }}selected{{ end }}>Nama</option>
+                        <option value="name" {{ if eq .searchBy "name" }}selected{{ end }}>Name</option>
                         <option value="email" {{ if eq .searchBy "email" }}selected{{ end }}>Email</option>
                         <option value="role" {{ if eq .searchBy "role" }}selected{{ end }}>Role</option>
                     </select>
@@ -45,7 +45,7 @@
                         id="tableSearch"
                         name="q"
                         class="table-search"
-                        placeholder="Cari data user..."
+                        placeholder="Search users..."
                         value="{{ .searchQ }}"
                         autocomplete="off">
                 </form>
@@ -53,7 +53,7 @@
                     <input type="hidden" name="page" value="1">
                     <input type="hidden" name="q" value="{{ .searchQ }}">
                     <input type="hidden" name="search_by" value="{{ .searchBy }}">
-                    <label for="per_page">Tampilkan</label>
+                    <label for="per_page">Show</label>
                     <select id="per_page" name="per_page" onchange="this.form.submit()">
                         {{ range .perPageList }}
                         <option value="{{ . }}" {{ if eq $.perPage . }}selected{{ end }}>{{ . }}</option>
@@ -61,7 +61,7 @@
                     </select>
                 </form>
                 {{ if .isAdmin }}
-                <button type="button" onclick="openCreateModal()">+ Tambah User</button>
+                <button type="button" onclick="openCreateModal()">+ Add User</button>
                 {{ end }}
             </div>
         </div>
@@ -71,10 +71,10 @@
                 <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Nama</th>
+                    <th>Name</th>
                     <th>Email</th>
                     <th>Role</th>
-                    {{ if .isAdmin }}<th>Aksi Admin</th>{{ end }}
+                    {{ if .isAdmin }}<th>Admin Actions</th>{{ end }}
                 </tr>
                 </thead>
                 <tbody>
@@ -113,7 +113,7 @@
                 </tr>
                 {{ else }}
                 <tr>
-                    <td colspan="{{ if .isAdmin }}5{{ else }}4{{ end }}">Tidak ada data yang cocok.</td>
+                    <td colspan="{{ if .isAdmin }}5{{ else }}4{{ end }}">No matching data found.</td>
                 </tr>
                 {{ end }}
                 </tbody>
@@ -167,7 +167,7 @@
         </div>
 
         {{ if not .isAdmin }}
-        <p class="hint">Akun user biasa hanya bisa melihat list user. CRUD hanya untuk admin.</p>
+        <p class="hint">Regular users can only view the user list. CRUD is admin-only.</p>
         {{ end }}
     </section>
 </main>
@@ -175,13 +175,13 @@
 {{ if .isAdmin }}
 <div id="createModal" class="modal-backdrop hidden">
     <div class="modal-card">
-        <h3>Tambah User</h3>
+        <h3>Add User</h3>
         <form method="post" action="/dashboard/users" class="form">
             <input type="hidden" name="page" value="{{ .page }}">
             <input type="hidden" name="per_page" value="{{ .perPage }}">
             <input type="hidden" name="q" value="{{ .searchQ }}">
             <input type="hidden" name="search_by" value="{{ .searchBy }}">
-            <label>Nama</label>
+            <label>Name</label>
             <input type="text" name="name" required>
 
             <label>Email</label>
@@ -197,8 +197,8 @@
             </select>
 
             <div class="modal-actions">
-                <button type="button" class="btn-muted" onclick="closeCreateModal()">Batal</button>
-                <button type="submit">Tambah</button>
+                <button type="button" class="btn-muted" onclick="closeCreateModal()">Cancel</button>
+                <button type="submit">Add</button>
             </div>
         </form>
     </div>
@@ -212,7 +212,7 @@
             <input type="hidden" name="per_page" value="{{ .perPage }}">
             <input type="hidden" name="q" value="{{ .searchQ }}">
             <input type="hidden" name="search_by" value="{{ .searchBy }}">
-            <label>Nama</label>
+            <label>Name</label>
             <input type="text" id="updateName" name="name" required>
 
             <label>Email</label>
@@ -224,12 +224,12 @@
                 <option value="admin">admin</option>
             </select>
 
-            <label>Password Baru (opsional)</label>
-            <input type="password" name="password" placeholder="Kosongkan jika tidak ganti">
+            <label>New Password (optional)</label>
+            <input type="password" name="password" placeholder="Leave blank to keep current password">
 
             <div class="modal-actions">
-                <button type="button" class="btn-muted" onclick="closeUpdateModal()">Batal</button>
-                <button type="submit">Simpan</button>
+                <button type="button" class="btn-muted" onclick="closeUpdateModal()">Cancel</button>
+                <button type="submit">Save</button>
             </div>
         </form>
     </div>
@@ -237,7 +237,7 @@
 
 <div id="deleteModal" class="modal-backdrop hidden">
     <div class="modal-card">
-        <h3>Hapus User</h3>
+        <h3>Delete User</h3>
         <p id="deleteText"></p>
         <form id="deleteForm" method="post">
             <input type="hidden" name="page" value="{{ .page }}">
@@ -245,8 +245,8 @@
             <input type="hidden" name="q" value="{{ .searchQ }}">
             <input type="hidden" name="search_by" value="{{ .searchBy }}">
             <div class="modal-actions">
-                <button type="button" class="btn-muted" onclick="closeDeleteModal()">Batal</button>
-                <button type="submit" class="danger">Ya, Hapus</button>
+                <button type="button" class="btn-muted" onclick="closeDeleteModal()">Cancel</button>
+                <button type="submit" class="danger">Yes, Delete</button>
             </div>
         </form>
     </div>
@@ -294,7 +294,7 @@ function openDeleteModal(id, name) {
     var form = document.getElementById("deleteForm");
     var text = document.getElementById("deleteText");
     form.action = "/dashboard/users/" + id + "/delete";
-    text.innerText = "Yakin ingin menghapus user: " + name + "?";
+    text.innerText = "Are you sure you want to delete user: " + name + "?";
     modal.classList.remove("hidden");
 }
 

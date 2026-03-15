@@ -65,7 +65,7 @@ func (h *DashboardHandler) CreateUser(c *gin.Context) {
 	searchBy := getSearchBy(c)
 
 	if !isAdmin(c) {
-		c.Redirect(http.StatusFound, buildDashboardURL(page, perPage, searchQ, searchBy, "error", "Hanya admin yang bisa menambah user"))
+		c.Redirect(http.StatusFound, buildDashboardURL(page, perPage, searchQ, searchBy, "error", "Only admins can add users"))
 		return
 	}
 
@@ -74,19 +74,19 @@ func (h *DashboardHandler) CreateUser(c *gin.Context) {
 	password := c.PostForm("password")
 	role := normalizeRole(c.PostForm("role"))
 	if name == "" || email == "" || len(password) < 6 {
-		h.renderDashboard(c, "Nama, email, dan password minimal 6 karakter wajib diisi.")
+		h.renderDashboard(c, "Name, email, and password (minimum 6 characters) are required.")
 		return
 	}
 
 	var existing models.User
 	if err := h.db.Where("email = ?", email).First(&existing).Error; err == nil {
-		h.renderDashboard(c, "Email sudah terdaftar.")
+		h.renderDashboard(c, "Email is already registered.")
 		return
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		h.renderDashboard(c, "Gagal memproses password.")
+		h.renderDashboard(c, "Failed to process password.")
 		return
 	}
 
@@ -97,12 +97,12 @@ func (h *DashboardHandler) CreateUser(c *gin.Context) {
 		Role:         role,
 	}
 	if err := h.db.Create(&user).Error; err != nil {
-		h.renderDashboard(c, "Gagal menambah user.")
+		h.renderDashboard(c, "Failed to add user.")
 		return
 	}
 	h.adjustTotalUsersCache(1)
 
-	c.Redirect(http.StatusFound, buildDashboardURL(page, perPage, searchQ, searchBy, "success", "User berhasil ditambahkan"))
+	c.Redirect(http.StatusFound, buildDashboardURL(page, perPage, searchQ, searchBy, "success", "User added successfully"))
 }
 
 func (h *DashboardHandler) UpdateUser(c *gin.Context) {
@@ -111,19 +111,19 @@ func (h *DashboardHandler) UpdateUser(c *gin.Context) {
 	searchBy := getSearchBy(c)
 
 	if !isAdmin(c) {
-		c.Redirect(http.StatusFound, buildDashboardURL(page, perPage, searchQ, searchBy, "error", "Hanya admin yang bisa mengubah user"))
+		c.Redirect(http.StatusFound, buildDashboardURL(page, perPage, searchQ, searchBy, "error", "Only admins can update users"))
 		return
 	}
 
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
-		h.renderDashboard(c, "ID user tidak valid.")
+		h.renderDashboard(c, "Invalid user ID.")
 		return
 	}
 
 	var user models.User
 	if err := h.db.First(&user, id).Error; err != nil {
-		h.renderDashboard(c, "User tidak ditemukan.")
+		h.renderDashboard(c, "User not found.")
 		return
 	}
 
@@ -133,13 +133,13 @@ func (h *DashboardHandler) UpdateUser(c *gin.Context) {
 	password := c.PostForm("password")
 
 	if name == "" || email == "" {
-		h.renderDashboard(c, "Nama dan email wajib diisi.")
+		h.renderDashboard(c, "Name and email are required.")
 		return
 	}
 
 	var duplicate models.User
 	if err := h.db.Where("email = ? AND id <> ?", email, user.ID).First(&duplicate).Error; err == nil {
-		h.renderDashboard(c, "Email sudah digunakan user lain.")
+		h.renderDashboard(c, "Email is already used by another user.")
 		return
 	}
 
@@ -148,19 +148,19 @@ func (h *DashboardHandler) UpdateUser(c *gin.Context) {
 	user.Role = role
 	if strings.TrimSpace(password) != "" {
 		if len(password) < 6 {
-			h.renderDashboard(c, "Password baru minimal 6 karakter.")
+			h.renderDashboard(c, "New password must be at least 6 characters.")
 			return
 		}
 		hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
-			h.renderDashboard(c, "Gagal memproses password baru.")
+			h.renderDashboard(c, "Failed to process new password.")
 			return
 		}
 		user.PasswordHash = string(hash)
 	}
 
 	if err := h.db.Save(&user).Error; err != nil {
-		h.renderDashboard(c, "Gagal mengubah user.")
+		h.renderDashboard(c, "Failed to update user.")
 		return
 	}
 
@@ -172,7 +172,7 @@ func (h *DashboardHandler) UpdateUser(c *gin.Context) {
 		_ = session.Save()
 	}
 
-	c.Redirect(http.StatusFound, buildDashboardURL(page, perPage, searchQ, searchBy, "success", "User berhasil diubah"))
+	c.Redirect(http.StatusFound, buildDashboardURL(page, perPage, searchQ, searchBy, "success", "User updated successfully"))
 }
 
 func (h *DashboardHandler) DeleteUser(c *gin.Context) {
@@ -181,29 +181,29 @@ func (h *DashboardHandler) DeleteUser(c *gin.Context) {
 	searchBy := getSearchBy(c)
 
 	if !isAdmin(c) {
-		c.Redirect(http.StatusFound, buildDashboardURL(page, perPage, searchQ, searchBy, "error", "Hanya admin yang bisa menghapus user"))
+		c.Redirect(http.StatusFound, buildDashboardURL(page, perPage, searchQ, searchBy, "error", "Only admins can delete users"))
 		return
 	}
 
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
 	if err != nil {
-		h.renderDashboard(c, "ID user tidak valid.")
+		h.renderDashboard(c, "Invalid user ID.")
 		return
 	}
 
 	currentUserID := sessionUserID(c)
 	if currentUserID == uint(id) {
-		h.renderDashboard(c, "Admin tidak bisa menghapus akun sendiri.")
+		h.renderDashboard(c, "Admins cannot delete their own account.")
 		return
 	}
 
 	if err := h.db.Delete(&models.User{}, id).Error; err != nil {
-		h.renderDashboard(c, "Gagal menghapus user.")
+		h.renderDashboard(c, "Failed to delete user.")
 		return
 	}
 	h.adjustTotalUsersCache(-1)
 
-	c.Redirect(http.StatusFound, buildDashboardURL(page, perPage, searchQ, searchBy, "success", "User berhasil dihapus"))
+	c.Redirect(http.StatusFound, buildDashboardURL(page, perPage, searchQ, searchBy, "success", "User deleted successfully"))
 }
 
 func (h *DashboardHandler) renderDashboard(c *gin.Context, formError string) {
@@ -236,7 +236,7 @@ func (h *DashboardHandler) renderDashboardWithSuccess(c *gin.Context, formError,
 		var err error
 		totalUsers, err = h.countUsers(searchQ, searchBy)
 		if err != nil {
-			c.String(http.StatusInternalServerError, "gagal menghitung data users")
+			c.String(http.StatusInternalServerError, "failed to count users")
 			return
 		}
 		totalPages = int((totalUsers + int64(perPage) - 1) / int64(perPage))
@@ -270,7 +270,7 @@ func (h *DashboardHandler) renderDashboardWithSuccess(c *gin.Context, formError,
 		Limit(limit).
 		Offset(offset).
 		Scan(&users).Error; err != nil {
-		c.String(http.StatusInternalServerError, "gagal memuat data users")
+		c.String(http.StatusInternalServerError, "failed to load users")
 		return
 	}
 	if searchMode && len(users) > 0 {

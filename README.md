@@ -1,32 +1,32 @@
 # WebsiteGo
 
-Aplikasi web Go untuk manajemen user dengan stack:
+Go web application for user management with the following stack:
 - Gin (web framework)
 - GORM + MySQL
 - Session cookie (`gin-contrib/sessions`)
-- SQL migration embedded (`golang-migrate`)
-- Auth register/login/logout + role (`admin`/`user`)
-- Dashboard user dengan search, pagination, dan CRUD khusus admin
+- Embedded SQL migrations (`golang-migrate`)
+- Register/login/logout auth + roles (`admin`/`user`)
+- User dashboard with search, pagination, and admin-only CRUD
 
-## Fitur Utama
-- Register & login dengan hash password `bcrypt`.
-- User pertama saat register otomatis menjadi `admin`.
-- Fallback auto-promote: jika tidak ada admin, user yang login bisa dipromosikan jadi admin.
-- Route terlindungi untuk dashboard (`/dashboard`).
-- Lihat daftar user di dashboard (semua user login).
-- Search dashboard berdasarkan `all`, `id`, `name`, `email`, `role`.
-- Pagination dashboard (`10/25/50/100`) + lompat halaman `-100/-1000/+100/+1000`.
-- Tambah / update / delete user dari dashboard (admin only).
-- Cegah admin menghapus akun sendiri.
-- Migrasi SQL otomatis dijalankan saat `cmd/web` start.
-- Middleware untuk memfilter error client disconnect agar log lebih bersih.
+## Main Features
+- Register & login with `bcrypt` password hashing.
+- The first registered user is automatically assigned as `admin`.
+- Auto-promote fallback: if no admin exists, a logging-in user can be promoted to admin.
+- Protected dashboard route (`/dashboard`).
+- View the user list on the dashboard (all logged-in users).
+- Dashboard search by `all`, `id`, `name`, `email`, `role`.
+- Dashboard pagination (`10/25/50/100`) + page jumps `-100/-1000/+100/+1000`.
+- Add / update / delete users from dashboard (admin only).
+- Prevent admins from deleting their own account.
+- SQL migrations run automatically when `cmd/web` starts.
+- Middleware filters client-disconnect errors to keep logs cleaner.
 
-## Prasyarat
-- Go `1.25.x` (mengikuti `go.mod`)
-- MySQL aktif (contoh: XAMPP MySQL)
+## Prerequisites
+- Go `1.25.x` (based on `go.mod`)
+- Running MySQL server (example: XAMPP MySQL)
 
-## Setup Database
-Buat database:
+## Database Setup
+Create the database:
 
 ```sql
 CREATE DATABASE websitego CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -40,8 +40,8 @@ go mod tidy
 go run ./cmd/web
 ```
 
-## Konfigurasi Environment
-Project membaca `.env` via `godotenv` (jika file ada). Jika tidak diisi, fallback default dari kode akan dipakai.
+## Environment Configuration
+The project reads `.env` through `godotenv` (if the file exists). If values are missing, code defaults will be used.
 
 ```env
 APP_PORT=8080
@@ -61,22 +61,22 @@ COOKIE_SECURE=false
 COOKIE_SAMESITE=lax
 ```
 
-Keterangan:
-- `SESSION_SECRET` tidak boleh kosong.
-- `COOKIE_SAMESITE`: `lax` (default), `strict`, atau `none`.
-- `COOKIE_SECURE=true` direkomendasikan untuk HTTPS production.
+Notes:
+- `SESSION_SECRET` must not be empty.
+- `COOKIE_SAMESITE`: `lax` (default), `strict`, or `none`.
+- `COOKIE_SECURE=true` is recommended for HTTPS production.
 
-## Menjalankan Aplikasi
+## Running the Application
 
 ```bash
 go mod tidy
 go run ./cmd/web
 ```
 
-Server berjalan di `http://localhost:8080` (atau sesuai `APP_PORT`).
+The server runs at `http://localhost:8080` (or based on `APP_PORT`).
 
-## Migrasi
-Perintah manual migrasi:
+## Migrations
+Manual migration commands:
 
 ```bash
 go run ./cmd/migrate up
@@ -84,39 +84,39 @@ go run ./cmd/migrate down
 go run ./cmd/migrate force <version>
 ```
 
-Catatan:
-- `cmd/web` otomatis menjalankan `up` migration saat startup.
-- File migration berada di `internal/migrations/sql` dan di-embed ke binary.
+Notes:
+- `cmd/web` automatically runs `up` migration on startup.
+- Migration files are in `internal/migrations/sql` and embedded into the binary.
 
 ## Seed Data
-Tersedia seeder di `cmd/seed`:
+A seeder is available in `cmd/seed`:
 
 ```bash
 go run ./cmd/seed
 ```
 
-Opsional jumlah user role `user`:
+Optional number of `user` role records:
 
 ```bash
 go run ./cmd/seed --users=10000
 ```
 
-Perilaku seed:
-- Membuat/mengupdate akun admin (`admin@gmail.com` / `admin789`, role `admin`).
-- Membuat user biasa dengan password default: `user12345`
-- Default jumlah user adalah `9,999,999` jika flag `--users` tidak diisi.
+Seed behavior:
+- Creates/updates the admin account (`admin@gmail.com` / `admin789`, role `admin`).
+- Creates regular users with default password: `user12345`.
+- Default number of users is `9,999,999` if `--users` is not provided.
 
-Rekomendasi:
-- Untuk development, selalu gunakan `--users` agar tidak membuat data terlalu besar tanpa sengaja.
+Recommendation:
+- For development, always use `--users` to avoid creating very large datasets unintentionally.
 
-## Alur Penggunaan
-1. Buka `/register` untuk membuat akun.
-2. Login di `/login`.
-3. Setelah login, akses `/dashboard`.
+## Usage Flow
+1. Open `/register` to create an account.
+2. Sign in at `/login`.
+3. After login, access `/dashboard`.
 4. Logout via `/logout`.
 
-## Endpoint Ringkas
-- `GET /` redirect ke `/login` atau `/dashboard` tergantung session.
+## Endpoint Summary
+- `GET /` redirects to `/login` or `/dashboard` depending on session state.
 - `GET /register`, `POST /register` (guest only)
 - `GET /login`, `POST /login` (guest only)
 - `GET /logout`
@@ -125,23 +125,23 @@ Rekomendasi:
 - `POST /dashboard/users/:id/update` (admin only)
 - `POST /dashboard/users/:id/delete` (admin only)
 
-## Skema dan Index Database
-Migration yang tersedia:
+## Database Schema and Indexes
+Available migration:
 - `000004_init_schema`
 
-Catatan untuk database lama:
-- Jika sebelumnya pernah memakai versi migrasi bertahap, sesuaikan versi dengan `force` sebelum `up` (contoh: `go run ./cmd/migrate force 4`).
+Notes for legacy databases:
+- If you previously used incremental migration versions, align the version with `force` before `up` (example: `go run ./cmd/migrate force 4`).
 
-Index untuk optimasi dashboard/search:
+Indexes for dashboard/search optimization:
 - `idx_users_dashboard_list (id, name, email, role)`
 - `idx_users_name (name)`
 - `idx_users_role (role)`
 
-## Struktur Project
+## Project Structure
 ```text
 cmd/
   web/       # web server
-  migrate/   # CLI migration
+  migrate/   # migration CLI
   seed/      # seed data
 
 internal/

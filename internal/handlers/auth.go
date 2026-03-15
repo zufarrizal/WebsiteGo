@@ -36,7 +36,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	if name == "" || email == "" || len(password) < 6 {
 		c.HTML(http.StatusBadRequest, "register.html", gin.H{
 			"title": "Register",
-			"error": "Nama, email, dan password minimal 6 karakter wajib diisi.",
+			"error": "Name, email, and password (minimum 6 characters) are required.",
 		})
 		return
 	}
@@ -45,7 +45,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	if err := h.db.Where("email = ?", email).First(&existing).Error; err == nil {
 		c.HTML(http.StatusBadRequest, "register.html", gin.H{
 			"title": "Register",
-			"error": "Email sudah terdaftar.",
+			"error": "Email is already registered.",
 		})
 		return
 	}
@@ -54,7 +54,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	if err != nil {
 		c.HTML(http.StatusInternalServerError, "register.html", gin.H{
 			"title": "Register",
-			"error": "Gagal memproses password.",
+			"error": "Failed to process password.",
 		})
 		return
 	}
@@ -74,7 +74,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	if err := h.db.Create(&user).Error; err != nil {
 		c.HTML(http.StatusInternalServerError, "register.html", gin.H{
 			"title": "Register",
-			"error": "Gagal menyimpan user.",
+			"error": "Failed to save user.",
 		})
 		return
 	}
@@ -82,7 +82,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	c.HTML(http.StatusOK, "login.html", gin.H{
 		"title":   "Login",
 		"error":   "",
-		"success": "Registrasi berhasil. Silakan login.",
+		"success": "Registration successful. Please sign in.",
 	})
 }
 
@@ -102,7 +102,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	if err := h.db.Where("email = ?", email).First(&user).Error; err != nil {
 		c.HTML(http.StatusUnauthorized, "login.html", gin.H{
 			"title": "Login",
-			"error": "Email atau password salah.",
+			"error": "Invalid email or password.",
 		})
 		return
 	}
@@ -110,7 +110,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
 		c.HTML(http.StatusUnauthorized, "login.html", gin.H{
 			"title": "Login",
-			"error": "Email atau password salah.",
+			"error": "Invalid email or password.",
 		})
 		return
 	}
@@ -130,20 +130,20 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	if err := session.Save(); err != nil {
 		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
 			"title": "Login",
-			"error": "Gagal membuat session.",
+			"error": "Failed to create session.",
 		})
 		return
 	}
 
 	// Render dashboard directly to avoid redirect and extra request.
 	if h.dashboard != nil {
-		h.dashboard.renderDashboardWithSuccess(c, "", "Login berhasil.")
+		h.dashboard.renderDashboardWithSuccess(c, "", "Login successful.")
 		return
 	}
 	c.HTML(http.StatusOK, "login.html", gin.H{
 		"title":   "Login",
 		"error":   "",
-		"success": "Login berhasil.",
+		"success": "Login successful.",
 	})
 }
 
@@ -154,6 +154,6 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	c.HTML(http.StatusOK, "login.html", gin.H{
 		"title":   "Login",
 		"error":   "",
-		"success": "Logout berhasil.",
+		"success": "Logout successful.",
 	})
 }

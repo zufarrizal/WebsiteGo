@@ -1,0 +1,34 @@
+.env
+.env.local
+.env.*.local
+tmp/
+bin/
+dist/
+vendor/
+
+# Build outputs
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage.out
+cover.out
+*.log
+
+# Go workspace/cache
+go.work
+go.work.sum
+.cache/
+
+# IDE/editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

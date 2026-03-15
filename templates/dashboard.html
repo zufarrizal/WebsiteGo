@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ .title }}</title>
+    <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+{{ if or .error .success }}
+<div class="toast-stack" data-duration="3000">
+    {{ if .error }}
+    <div class="toast toast-error">{{ .error }}</div>
+    {{ end }}
+    {{ if .success }}
+    <div class="toast toast-success">{{ .success }}</div>
+    {{ end }}
+</div>
+{{ end }}
+<main class="container">
+    <section class="card card-wide">
+        <div class="topbar">
+            <div>
+                <h1>Dashboard</h1>
+                <p>Selamat datang, <strong>{{ .name }}</strong> (Role: <strong>{{ .role }}</strong>)</p>
+            </div>
+            <a class="logout" href="/logout">Logout</a>
+        </div>
+
+        <div class="table-toolbar">
+            <h2>Daftar User</h2>
+            <div class="toolbar-actions">
+                <form method="get" action="/dashboard" class="search-form" id="searchForm">
+                    <input type="hidden" name="page" value="1">
+                    <input type="hidden" name="per_page" value="{{ .perPage }}">
+                    <select id="searchBy" name="search_by" class="search-by">
+                        <option value="all" {{ if eq .searchBy "all" }}selected{{ end }}>Semua</option>
+                        <option value="id" {{ if eq .searchBy "id" }}selected{{ end }}>ID</option>
+                        <option value="name" {{ if eq .searchBy "name" }}selected{{ end }}>Nama</option>
+                        <option value="email" {{ if eq .searchBy "email" }}selected{{ end }}>Email</option>
+                        <option value="role" {{ if eq .searchBy "role" }}selected{{ end }}>Role</option>
+                    </select>
+                    <input
+                        type="search"
+                        id="tableSearch"
+                        name="q"
+                        class="table-search"
+                        placeholder="Cari data user..."
+                        value="{{ .searchQ }}"
+                        autocomplete="off">
+                </form>
+                <form method="get" action="/dashboard" class="pager-form">
+                    <input type="hidden" name="page" value="1">
+                    <input type="hidden" name="q" value="{{ .searchQ }}">
+                    <input type="hidden" name="search_by" value="{{ .searchBy }}">
+                    <label for="per_page">Tampilkan</label>
+                    <select id="per_page" name="per_page" onchange="this.form.submit()">
+                        {{ range .perPageList }}
+                        <option value="{{ . }}" {{ if eq $.perPage . }}selected{{ end }}>{{ . }}</option>
+                        {{ end }}
+                    </select>
+                </form>
+                {{ if .isAdmin }}
+                <button type="button" onclick="openCreateModal()">+ Tambah User</button>
+                {{ end }}
+            </div>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nama</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    {{ if .isAdmin }}<th>Aksi Admin</th>{{ end }}
+                </tr>
+                </thead>
+                <tbody>
+                {{ range .users }}
+                <tr>
+                    <td>{{ .ID }}</td>
+                    <td>{{ .Name }}</td>
+                    <td>{{ .Email }}</td>
+                    <td>
+                        <span class="badge {{ if eq .Role "admin" }}badge-admin{{ else }}badge-user{{ end }}">{{ .Role }}</span>
+                    </td>
+                    {{ if $.isAdmin }}
+                    <td>
+                        <div class="action-row">
+                            <button
+                                type="button"
+                                class="btn-small"
+                                data-id="{{ .ID }}"
+                                data-name="{{ .Name }}"
+                                data-email="{{ .Email }}"
+                                data-role="{{ .Role }}"
+                                onclick="openUpdateModalFromButton(this)">
+                                Update
+                            </button>
+                            <button
+                                type="button"
+                                class="btn-small danger"
+                                data-id="{{ .ID }}"
+                                data-name="{{ .Name }}"
+                                onclick="openDeleteModalFromButton(this)">
+                                Delete
+                            </button>
+                        </div>
+                    </td>
+                    {{ end }}
+                </tr>
+                {{ else }}
+                <tr>
+                    <td colspan="{{ if .isAdmin }}5{{ else }}4{{ end }}">Tidak ada data yang cocok.</td>
+                </tr>
+                {{ end }}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            {{ if .hasJumpL1k }}
+            <a class="page-link" href="/dashboard?page={{ .jumpL1k }}&per_page={{ .perPage }}&q={{ $.searchQ | urlquery }}&search_by={{ $.searchBy | urlquery }}">-1000</a>
+            {{ else }}
+            <span class="page-link disabled">-1000</span>
+            {{ end }}
+
+            {{ if .hasJumpL100 }}
+            <a class="page-link" href="/dashboard?page={{ .jumpL100 }}&per_page={{ .perPage }}&q={{ $.searchQ | urlquery }}&search_by={{ $.searchBy | urlquery }}">-100</a>
+            {{ else }}
+            <span class="page-link disabled">-100</span>
+            {{ end }}
+
+            {{ if .hasPrev }}
+            <a class="page-link" href="/dashboard?page={{ .prevPage }}&per_page={{ .perPage }}&q={{ $.searchQ | urlquery }}&search_by={{ $.searchBy | urlquery }}">Prev</a>
+            {{ else }}
+            <span class="page-link disabled">Prev</span>
+            {{ end }}
+
+            {{ range .pages }}
+            {{ if eq $.page . }}
+            <span class="page-link active">{{ . }}</span>
+            {{ else }}
+            <a class="page-link" href="/dashboard?page={{ . }}&per_page={{ $.perPage }}&q={{ $.searchQ | urlquery }}&search_by={{ $.searchBy | urlquery }}">{{ . }}</a>
+            {{ end }}
+            {{ end }}
+
+            {{ if .hasNext }}
+            <a class="page-link" href="/dashboard?page={{ .nextPage }}&per_page={{ .perPage }}&q={{ $.searchQ | urlquery }}&search_by={{ $.searchBy | urlquery }}">Next</a>
+            {{ else }}
+            <span class="page-link disabled">Next</span>
+            {{ end }}
+
+            {{ if .hasJumpR100 }}
+            <a class="page-link" href="/dashboard?page={{ .jumpR100 }}&per_page={{ .perPage }}&q={{ $.searchQ | urlquery }}&search_by={{ $.searchBy | urlquery }}">+100</a>
+            {{ else }}
+            <span class="page-link disabled">+100</span>
+            {{ end }}
+
+            {{ if .hasJumpR1k }}
+            <a class="page-link" href="/dashboard?page={{ .jumpR1k }}&per_page={{ .perPage }}&q={{ $.searchQ | urlquery }}&search_by={{ $.searchBy | urlquery }}">+1000</a>
+            {{ else }}
+            <span class="page-link disabled">+1000</span>
+            {{ end }}
+        </div>
+
+        {{ if not .isAdmin }}
+        <p class="hint">Akun user biasa hanya bisa melihat list user. CRUD hanya untuk admin.</p>
+        {{ end }}
+    </section>
+</main>
+
+{{ if .isAdmin }}
+<div id="createModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+        <h3>Tambah User</h3>
+        <form method="post" action="/dashboard/users" class="form">
+            <input type="hidden" name="page" value="{{ .page }}">
+            <input type="hidden" name="per_page" value="{{ .perPage }}">
+            <input type="hidden" name="q" value="{{ .searchQ }}">
+            <input type="hidden" name="search_by" value="{{ .searchBy }}">
+            <label>Nama</label>
+            <input type="text" name="name" required>
+
+            <label>Email</label>
+            <input type="email" name="email" required>
+
+            <label>Password</label>
+            <input type="password" name="password" required>
+
+            <label>Role</label>
+            <select name="role">
+                <option value="user">user</option>
+                <option value="admin">admin</option>
+            </select>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-muted" onclick="closeCreateModal()">Batal</button>
+                <button type="submit">Tambah</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="updateModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+        <h3>Update User</h3>
+        <form id="updateForm" method="post" class="form">
+            <input type="hidden" name="page" value="{{ .page }}">
+            <input type="hidden" name="per_page" value="{{ .perPage }}">
+            <input type="hidden" name="q" value="{{ .searchQ }}">
+            <input type="hidden" name="search_by" value="{{ .searchBy }}">
+            <label>Nama</label>
+            <input type="text" id="updateName" name="name" required>
+
+            <label>Email</label>
+            <input type="email" id="updateEmail" name="email" required>
+
+            <label>Role</label>
+            <select id="updateRole" name="role">
+                <option value="user">user</option>
+                <option value="admin">admin</option>
+            </select>
+
+            <label>Password Baru (opsional)</label>
+            <input type="password" name="password" placeholder="Kosongkan jika tidak ganti">
+
+            <div class="modal-actions">
+                <button type="button" class="btn-muted" onclick="closeUpdateModal()">Batal</button>
+                <button type="submit">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="deleteModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+        <h3>Hapus User</h3>
+        <p id="deleteText"></p>
+        <form id="deleteForm" method="post">
+            <input type="hidden" name="page" value="{{ .page }}">
+            <input type="hidden" name="per_page" value="{{ .perPage }}">
+            <input type="hidden" name="q" value="{{ .searchQ }}">
+            <input type="hidden" name="search_by" value="{{ .searchBy }}">
+            <div class="modal-actions">
+                <button type="button" class="btn-muted" onclick="closeDeleteModal()">Batal</button>
+                <button type="submit" class="danger">Ya, Hapus</button>
+            </div>
+        </form>
+    </div>
+</div>
+{{ end }}
+
+<script>
+function openCreateModal() {
+    var modal = document.getElementById("createModal");
+    if (modal) {
+        modal.classList.remove("hidden");
+    }
+}
+
+function closeCreateModal() {
+    var modal = document.getElementById("createModal");
+    if (modal) {
+        modal.classList.add("hidden");
+    }
+}
+
+function openUpdateModal(id, name, email, role) {
+    var modal = document.getElementById("updateModal");
+    var form = document.getElementById("updateForm");
+    form.action = "/dashboard/users/" + id + "/update";
+    document.getElementById("updateName").value = name;
+    document.getElementById("updateEmail").value = email;
+    document.getElementById("updateRole").value = role;
+    modal.classList.remove("hidden");
+}
+
+function openUpdateModalFromButton(button) {
+    openUpdateModal(button.dataset.id, button.dataset.name, button.dataset.email, button.dataset.role);
+}
+
+function closeUpdateModal() {
+    var modal = document.getElementById("updateModal");
+    if (modal) {
+        modal.classList.add("hidden");
+    }
+}
+
+function openDeleteModal(id, name) {
+    var modal = document.getElementById("deleteModal");
+    var form = document.getElementById("deleteForm");
+    var text = document.getElementById("deleteText");
+    form.action = "/dashboard/users/" + id + "/delete";
+    text.innerText = "Yakin ingin menghapus user: " + name + "?";
+    modal.classList.remove("hidden");
+}
+
+function openDeleteModalFromButton(button) {
+    openDeleteModal(button.dataset.id, button.dataset.name);
+}
+
+function closeDeleteModal() {
+    var modal = document.getElementById("deleteModal");
+    if (modal) {
+        modal.classList.add("hidden");
+    }
+}
+
+window.addEventListener("click", function (event) {
+    var createModal = document.getElementById("createModal");
+    var updateModal = document.getElementById("updateModal");
+    var deleteModal = document.getElementById("deleteModal");
+    if (createModal && event.target === createModal) {
+        closeCreateModal();
+    }
+    if (updateModal && event.target === updateModal) {
+        closeUpdateModal();
+    }
+    if (deleteModal && event.target === deleteModal) {
+        closeDeleteModal();
+    }
+});
+
+// Prevent request flood when pagination links are clicked repeatedly.
+(function () {
+    var pagination = document.querySelector(".pagination");
+    if (!pagination) {
+        return;
+    }
+
+    var isPaginating = false;
+    pagination.addEventListener("click", function (event) {
+        var link = event.target.closest("a.page-link");
+        if (!link) {
+            return;
+        }
+
+        if (isPaginating) {
+            event.preventDefault();
+            return;
+        }
+
+        isPaginating = true;
+        pagination.classList.add("is-loading");
+
+        var links = pagination.querySelectorAll("a.page-link");
+        links.forEach(function (item) {
+            item.setAttribute("aria-disabled", "true");
+            item.setAttribute("tabindex", "-1");
+        });
+    });
+})();
+
+(function () {
+    var stack = document.querySelector(".toast-stack");
+    if (!stack) {
+        return;
+    }
+    var duration = parseInt(stack.getAttribute("data-duration"), 10);
+    if (isNaN(duration) || duration < 0) {
+        duration = 3000;
+    }
+    window.setTimeout(function () {
+        stack.remove();
+    }, duration);
+})();
+
+(function () {
+    var searchInput = document.getElementById("tableSearch");
+    var searchBy = document.getElementById("searchBy");
+    var searchForm = document.getElementById("searchForm");
+    if (!searchInput || !searchForm || !searchBy) {
+        return;
+    }
+
+    var timer = null;
+    searchInput.addEventListener("input", function () {
+        if (timer) {
+            clearTimeout(timer);
+        }
+        var value = searchInput.value.trim();
+        if (value.length === 1) {
+            return;
+        }
+        timer = setTimeout(function () {
+            searchForm.submit();
+        }, 700);
+    });
+
+    searchBy.addEventListener("change", function () {
+        searchForm.submit();
+    });
+})();
+</script>
+</body>
+</html>

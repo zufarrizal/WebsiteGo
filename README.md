@@ -16,10 +16,12 @@ Go web application for user management with the following stack:
 - View the user list on the dashboard (all logged-in users).
 - Dashboard search by `all`, `id`, `name`, `email`, `role`.
 - Dashboard pagination (`10/25/50/100`) + page jumps `-100/-1000/+100/+1000`.
+- Indexed search/list queries to reduce scan time on large user tables.
+- Configurable DB connection pooling for better throughput under concurrent traffic.
+- Automatic migrations at startup to keep schema/indexes aligned with expected query paths.
+- Cleaner logs by filtering client-disconnect noise, helping faster performance troubleshooting.
 - Add / update / delete users from dashboard (admin only).
 - Prevent admins from deleting their own account.
-- SQL migrations run automatically when `cmd/web` starts.
-- Middleware filters client-disconnect errors to keep logs cleaner.
 
 ## Prerequisites
 - Go `1.25.x` (based on `go.mod`)
@@ -136,6 +138,31 @@ Indexes for dashboard/search optimization:
 - `idx_users_dashboard_list (id, name, email, role)`
 - `idx_users_name (name)`
 - `idx_users_role (role)`
+
+## Website Access Speed Features
+1. Query indexing strategy
+   - Dashboard list and search use indexes to avoid full table scans as data grows.
+   - Composite index `idx_users_dashboard_list (id, name, email, role)` supports common list/search patterns.
+   - Additional single-column indexes (`name`, `role`) help targeted filters.
+
+2. Pagination for controlled query cost
+   - Dashboard limits rows per request (`10/25/50/100`) so each response remains predictable.
+   - Page jump controls help navigation without requesting excessively large payloads.
+   - This keeps response time and memory usage more stable on big datasets.
+
+3. Database connection pool tuning
+   - `DB_MAX_OPEN_CONNS` controls max concurrent active DB connections.
+   - `DB_MAX_IDLE_CONNS` keeps warm idle connections to reduce reconnect overhead.
+   - `DB_CONN_MAX_LIFETIME_MIN` refreshes long-lived connections to reduce stale-connection risk.
+   - These settings help balance throughput, latency, and DB server load.
+
+4. Runtime consistency for performance
+   - `cmd/web` runs migrations automatically so required indexes/schema stay present.
+   - This reduces risk of performance drops caused by schema mismatch across environments.
+
+5. Operational observability
+   - Middleware filters expected client-disconnect errors from logs.
+   - Cleaner logs make real latency/errors easier to detect and fix quickly.
 
 ## Project Structure
 ```text

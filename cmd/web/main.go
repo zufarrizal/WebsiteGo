@@ -30,9 +30,15 @@ func main() {
 	}
 
 	router := gin.Default()
+	if err := router.SetTrustedProxies(nil); err != nil {
+		log.Fatalf("failed to set trusted proxies: %v", err)
+	}
 	router.Use(middleware.SilenceClientAbortErrors())
 	router.LoadHTMLGlob("templates/*")
 	router.Static("/assets", "./assets")
+	router.GET("/favicon.ico", func(c *gin.Context) {
+		c.Status(204)
+	})
 
 	store := cookie.NewStore([]byte(cfg.SessionSecret))
 	store.Options(sessions.Options{
